@@ -14,6 +14,8 @@ contract Meerkoin is ERC20, ERC20Detailed {
     string private _symbol = "MEER";
     uint8 private _decimals = 18;
 
+    uint8 public fee = 1;
+
     mapping (address => uint256) public nonces;
 
     constructor() public ERC20Detailed(
@@ -41,7 +43,18 @@ contract Meerkoin is ERC20, ERC20Detailed {
 
         nonces[signer] += 1;
 
-        _transfer(signer, to, amount);
+        uint256 reward = SafeMath.mul(
+            SafeMath.div(amount, 100),
+            fee
+        );
+
+        _transfer(
+            signer,
+            to,
+            SafeMath.sub(amount, reward)
+        );
+
+        _transfer(signer, msg.sender, reward);
     }
 
     function metaTransferHash(address to, uint256 amount, uint256 nonce) public view returns (bytes32) {

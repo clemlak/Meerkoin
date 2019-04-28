@@ -113,6 +113,11 @@ contract('Meerkoin', (accounts) => {
 
   it('Should check account 1 balance', () => instance.balanceOf(accounts[1])
     .then((balance) => {
-      assert.equal(balance, Utils.toWei('1'), 'Account 1 balance is wrong');
+      assert.equal(balance, Utils.toWei('0.99'), 'Account 1 balance is wrong');
+    }));
+
+  it('Should check account 2 balance', () => instance.balanceOf(accounts[2])
+    .then((balance) => {
+      assert.equal(balance, Utils.toWei('0.01'), 'Account 2 balance is wrong');
     }));
 });
