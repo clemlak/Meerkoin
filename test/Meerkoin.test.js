@@ -3,9 +3,9 @@
 const Utils = require('web3-utils');
 const Accounts = require('web3-eth-accounts');
 
-const web3Accounts = new Accounts();
 const Meerkoin = artifacts.require('Meerkoin');
 
+const web3Accounts = new Accounts();
 let instance;
 
 const token = {
@@ -18,8 +18,8 @@ const token = {
 
 let nonce;
 let metaHash;
-const userPrivateKey = '0x9eff5cdfd780463812eeae4382c7575ade04fb07da4b5cc3416bafaf897f78a5';
-const userAddress = '0x86D2Fc11BE873ecA93A083c5cAbC38EC59bbC222';
+const userPrivateKey = '0x2ae8f7a9af03c0151d9422ad1f87238991897e5dd8bf9ce18d6a4edb3bfb8fed';
+const userAddress = '0x84EfE1a6e15F2865204E44458d9eBFbA26C0d2f9';
 
 contract('Meerkoin', (accounts) => {
   it('Should deploy an instance of the Meerkoin contract', () => Meerkoin.deployed()
@@ -79,6 +79,7 @@ contract('Meerkoin', (accounts) => {
   it('Should get the hash for the metaTransfer function', () => instance.metaTransferHash(
     accounts[1],
     Utils.toWei('1'),
+    Utils.toWei('0.1'),
     nonce,
   )
     .then((res) => {
@@ -87,6 +88,7 @@ contract('Meerkoin', (accounts) => {
         'metaTransfer',
         accounts[1],
         Utils.toWei('1'),
+        Utils.toWei('0.1'),
         nonce,
       );
 
@@ -106,18 +108,24 @@ contract('Meerkoin', (accounts) => {
     web3Accounts.sign(metaHash, userPrivateKey).signature,
     accounts[1],
     Utils.toWei('1'),
+    Utils.toWei('0.1'),
     nonce, {
       from: accounts[2],
     },
   ));
 
+  it('Should check again the balance of account 0', () => instance.balanceOf(accounts[0])
+    .then((balance) => {
+      assert.equal(balance.toString(), Utils.toWei('0'), 'Balance is wrong');
+    }));
+
   it('Should check account 1 balance', () => instance.balanceOf(accounts[1])
     .then((balance) => {
-      assert.equal(balance, Utils.toWei('0.99'), 'Account 1 balance is wrong');
+      assert.equal(balance, Utils.toWei('0.90'), 'Account 1 balance is wrong');
     }));
 
   it('Should check account 2 balance', () => instance.balanceOf(accounts[2])
     .then((balance) => {
-      assert.equal(balance, Utils.toWei('0.01'), 'Account 2 balance is wrong');
+      assert.equal(balance, Utils.toWei('0.1'), 'Account 2 balance is wrong');
     }));
 });

@@ -6,7 +6,7 @@ import "openzeppelin-solidity/contracts/token/ERC20/ERC20Detailed.sol";
 
 
 /**
- * @title User-friendly ERC20 token with gas-less transfers
+ * @title User-friendly ERC20 token with gas-less transfers and nicknames
  * @dev This contract is the base of our token
  */
 contract Meerkoin is ERC20, ERC20Detailed {
@@ -15,11 +15,16 @@ contract Meerkoin is ERC20, ERC20Detailed {
     string private _symbol = "MEER";
     uint8 private _decimals = 18;
 
-    /* Users will have to pay a fee to use meta functions */
-    uint8 public fee = 1;
-
     /* We store the nonces here */
     mapping (address => uint256) public nonces;
+
+    event OnCompletedTransfer(
+        address indexed from,
+        address to,
+        address indexed relayer,
+        uint256 amount,
+        uint256 reward
+    );
 
     constructor() public ERC20Detailed(
         _name,
@@ -48,11 +53,18 @@ contract Meerkoin is ERC20, ERC20Detailed {
      * @dev Transfers tokens using a meta-transaction
      * @param signature The signature of the address requesting a transfer
      * @param to The address receiving the tokens
+     * @param reward The reward given to the relayer
      * @param amount The amount of tokens to be transferred
      * @param nonce The current nonce for the original address
      */
-    function metaTransfer(bytes memory signature, address to, uint256 amount, uint256 nonce) public {
-        bytes32 hash = metaTransferHash(to, amount, nonce);
+    function metaTransfer(
+        bytes memory signature,
+        address to,
+        uint256 amount,
+        uint256 reward,
+        uint256 nonce
+    ) public {
+        bytes32 hash = metaTransferHash(to, amount, reward, nonce);
         address signer = getSigner(hash, signature);
 
         require(signer != address(0), "Cannot get signer");
@@ -60,9 +72,12 @@ contract Meerkoin is ERC20, ERC20Detailed {
 
         nonces[signer] += 1;
 
-        uint256 reward = SafeMath.mul(
-            SafeMath.div(amount, 100),
-            fee
+        emit OnCompletedTransfer(
+            signer,
+            to,
+            msg.sender,
+            amount,
+            reward
         );
 
         _transfer(
@@ -78,11 +93,17 @@ contract Meerkoin is ERC20, ERC20Detailed {
      * @dev Creates an hash for a meta transfer
      * @param to The address receiving the tokens
      * @param amount The amount of tokens to be transferred
+     * @param reward The reward proposed to the relayer to relay the transfer
      * @param nonce The current nonce for the original address
      * @return The hash for the meta transfer
      */
-    function metaTransferHash(address to, uint256 amount, uint256 nonce) public view returns (bytes32) {
-        return keccak256(abi.encodePacked(address(this), "metaTransfer", to, amount, nonce));
+    function metaTransferHash(
+        address to,
+        uint256 amount,
+        uint256 reward,
+        uint256 nonce
+    ) public view returns (bytes32) {
+        return keccak256(abi.encodePacked(address(this), "metaTransfer", to, amount, reward, nonce));
     }
 
     /**
